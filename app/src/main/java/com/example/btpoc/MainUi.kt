@@ -46,20 +46,22 @@ fun InitUi(
                 color = Color.Cyan
             )
         }
-        Spacer(modifier = Modifier.weight(0.5F))
+        Spacer(modifier = Modifier.height(20.dp))
         CenteredText(
             isScanning,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .weight(0.2F)
         )
-        Spacer(modifier = Modifier.height(20.dp))
-        BluetoothScanButton(
-            isScanning,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-        ) {
-            action()
+        if (isScanning.not()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            BluetoothScanButton(
+                isScanning,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+            ) {
+                action()
+            }
         }
         if (results.size > 0)
             CenteredListTitle(
@@ -190,7 +192,7 @@ fun CenteredText(isScanning: Boolean, modifier: Modifier) {
 
 @Preview(showBackground = true, backgroundColor = 1)
 @Composable
-fun DefaultPreview() {
+fun MailPreview() {
     BTPocTheme {
         Column {
             BluetoothScanButton(

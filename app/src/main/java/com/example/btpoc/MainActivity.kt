@@ -97,11 +97,8 @@ class MainActivity : ComponentActivity() {
             && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
             && checkSelfPermission(Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED
         ) {
-            if (requestLocationAndAwaitResult())
-                bluetoothManager.startScan()
-            else {
-                Toast.makeText(this, "Please Enable Location", Toast.LENGTH_LONG).show()
-            }
+            if (requestLocationAndAwaitResult()) bluetoothManager.startScan()
+            else Toast.makeText(this, "Please Enable Location", Toast.LENGTH_LONG).show()
         } else {
             btResultLauncher.launch(
                 arrayOf(

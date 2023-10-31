@@ -9,6 +9,7 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.Handler
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.lifecycleScope
@@ -34,9 +35,10 @@ class BluetoothManger(private val context: Context) {
             Log.d("Walid","onConnectionStateChange newState : $newState")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 // Device is connected, you can now discover services
+                Toast.makeText(context, "onConnectionStateChange: Connected", Toast.LENGTH_SHORT).show()
                 gatt?.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                // Device is disconnected
+                Toast.makeText(context, "onConnectionStateChange: Disconnected", Toast.LENGTH_SHORT).show()
             }
         }
         @SuppressLint("MissingPermission")
@@ -52,18 +54,29 @@ class BluetoothManger(private val context: Context) {
                         val characteristics = service.characteristics
                         for (characteristic in characteristics) {
                             // You can read, write, or enable notifications on these characteristics
-                            Log.d("Walid","onServicesDiscovered service : ${characteristic.uuid}")
+                            Log.d("Walid","onServicesDiscovered charteristic : ${characteristic.uuid}")
                             val serviceCharacteristic = gatt.getService(service.uuid)?.getCharacteristic(characteristic.uuid)
-                            val result = gatt.readCharacteristic(serviceCharacteristic)
+                            //Log.d("Walid","onServicesDiscovered serviceCharacteristic : ${serviceCharacteristic?.uuid}")
+                            val result = gatt.readCharacteristic(characteristic)
                             if (result.not()) {
                                 val response = context.enableBluetooth()
-                                if (response) gatt.readCharacteristic(serviceCharacteristic)
+                                if (response) gatt.readCharacteristic(characteristic)
                                 else stopScan()
                             }
                         }
                     }
                 }
             }
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            super.onCharacteristicRead(gatt, characteristic, status)
+            val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
+            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString")
         }
     }
 
