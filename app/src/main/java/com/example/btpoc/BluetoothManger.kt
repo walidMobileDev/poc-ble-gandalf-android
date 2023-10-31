@@ -3,23 +3,23 @@ package com.example.btpoc
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.*
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
+import android.bluetooth.le.*
 import android.content.Context
 import android.os.Handler
+import android.os.ParcelUuid
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
+val SERVICE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
 
 class BluetoothManger(private val context: Context) {
     companion object {
@@ -33,12 +33,18 @@ class BluetoothManger(private val context: Context) {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             Log.d("Walid","onConnectionStateChange newState : $newState")
+            context as ComponentActivity
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 // Device is connected, you can now discover services
-                Toast.makeText(context, "onConnectionStateChange: Connected", Toast.LENGTH_SHORT).show()
+                context.lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "onConnectionStateChange: Connected", Toast.LENGTH_SHORT).show()
+                }
+
                 gatt?.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Toast.makeText(context, "onConnectionStateChange: Disconnected", Toast.LENGTH_SHORT).show()
+                context.lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "onConnectionStateChange: Disconnected", Toast.LENGTH_SHORT).show()
+                }
             }
         }
         @SuppressLint("MissingPermission")
@@ -114,12 +120,18 @@ class BluetoothManger(private val context: Context) {
             }, SCAN_PERIOD)
             scanning = true
             results.removeAll { true }
-            bluetoothLeScanner.startScan(scanCallback)
+            //bluetoothLeScanner.startScan(scanCallback)
+            bluetoothLeScanner.startScan(listOf(createFilter()), defaultBleScanSettings, scanCallback)
         } else {
             scanning = false
             stopScan()
         }
     }
+
+    private fun createFilter(deviceAddress: String? = null): ScanFilter = ScanFilter.Builder()
+        .setServiceUuid(SERVICE_UUID)
+        .setDeviceAddress(deviceAddress)
+        .build()
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun stopScan() {
@@ -135,4 +147,11 @@ class BluetoothManger(private val context: Context) {
             }
         }
     }
+
+    private val defaultBleScanSettings: ScanSettings = ScanSettings.Builder().also {
+        it.setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+        it.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        it.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+        it.setMatchMode(ScanSettings.MATCH_MODE_STICKY)
+    }.build()
 }
