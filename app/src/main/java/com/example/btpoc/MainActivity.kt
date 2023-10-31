@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        bluetoothManager = BluetoothManger(context = this)
+        bluetoothManager = BluetoothManger(context = applicationContext)
         setContent {
             BTPocTheme {
                 val isScanning = bluetoothManager.isScanningFlow().collectAsState(initial = false)
@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                     InitUi(
                         isScanning = isScanning.value,
                         bluetoothScanner = bluetoothManager,
-                        bluetoothManager.results
+                        results = bluetoothManager.results
                     ) {
                        lifecycleScope.launch { startScan() }
                     }

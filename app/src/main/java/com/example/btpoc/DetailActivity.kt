@@ -1,5 +1,7 @@
 package com.example.btpoc
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,9 +15,9 @@ import com.example.btpoc.ui.theme.BTPocTheme
 
 class DetailActivity: ComponentActivity() {
 
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             BTPocTheme {
                 Surface(
@@ -23,7 +25,9 @@ class DetailActivity: ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Column {
-                        DetailListTitle(text = "Gatt services", modifier = Modifier
+                        DetailListTitle(
+                            text = "Gatt services",
+                            modifier = Modifier
                             .align(Alignment.CenterHorizontally)
                             .weight(0.2F)
                         )
@@ -31,5 +35,6 @@ class DetailActivity: ComponentActivity() {
                 }
             }
         }
+
     }
 }

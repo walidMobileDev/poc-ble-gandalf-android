@@ -35,12 +35,10 @@ class BluetoothManger(private val context: Context) {
             Log.d("Walid","onConnectionStateChange newState : $newState")
             context as ComponentActivity
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                // Device is connected, you can now discover services
-                context.lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "onConnectionStateChange: Connected", Toast.LENGTH_SHORT).show()
-                }
-
                 gatt?.discoverServices()
+                // Device is connected, you can now discover services
+                //TODO trigger event instead of switching activity here which is ew
+                // here trigger event and in MainActivity collect and react
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 context.lifecycleScope.launch(Dispatchers.Main) {
                     Toast.makeText(context, "onConnectionStateChange: Disconnected", Toast.LENGTH_SHORT).show()
