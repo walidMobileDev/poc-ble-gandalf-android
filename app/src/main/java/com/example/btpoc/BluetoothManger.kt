@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
@@ -16,12 +17,22 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import java.io.Serializable
+
+//TODO flow and observing
 
 val SERVICE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
 
-class BluetoothManger(private val context: Context) {
+enum class BluetoothConnectionState {
+    Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics
+}
+
+val bluetoothStateFlow = MutableStateFlow(BluetoothConnectionState.Initialized)
+
+class BluetoothManger(private val context: Context): Serializable {
     companion object {
         const val SCAN_PERIOD: Long = 10000
     }
@@ -33,16 +44,12 @@ class BluetoothManger(private val context: Context) {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             Log.d("Walid","onConnectionStateChange newState : $newState")
-            context as ComponentActivity
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt?.discoverServices()
                 // Device is connected, you can now discover services
                 //TODO trigger event instead of switching activity here which is ew
                 // here trigger event and in MainActivity collect and react
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                context.lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(context, "onConnectionStateChange: Disconnected", Toast.LENGTH_SHORT).show()
-                }
             }
         }
         @SuppressLint("MissingPermission")
@@ -114,6 +121,7 @@ class BluetoothManger(private val context: Context) {
         if (!scanning) { // Stops scanning after a pre-defined scan period.
             handler.postDelayed({
                 scanning = false
+                bluetoothStateFlow.value = BluetoothConnectionState.Initialized
                 stopScan()
             }, SCAN_PERIOD)
             scanning = true

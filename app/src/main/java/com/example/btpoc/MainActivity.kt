@@ -58,7 +58,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        bluetoothManager = BluetoothManger(context = applicationContext)
+        //doesn't work with application context
+        bluetoothManager = BluetoothManger(context = this)
         setContent {
             BTPocTheme {
                 val isScanning = bluetoothManager.isScanningFlow().collectAsState(initial = false)
