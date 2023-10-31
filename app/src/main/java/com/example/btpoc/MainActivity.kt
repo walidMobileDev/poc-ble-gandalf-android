@@ -3,11 +3,9 @@ package com.example.btpoc
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothGatt
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_FORWARD_RESULT
-import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Bundle
@@ -138,7 +136,7 @@ class MainActivity : ComponentActivity() {
             }
 
             task.addOnFailureListener { exception ->
-                if (exception is ResolvableApiException){
+                if (exception is ResolvableApiException) {
                     // Location settings are not satisfied, but this can be fixed
                     // by showing the user a dialog.
                     try {
