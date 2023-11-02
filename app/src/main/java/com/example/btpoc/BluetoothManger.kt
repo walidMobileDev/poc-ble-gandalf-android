@@ -5,16 +5,12 @@ import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
-import android.content.Intent
 import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,10 +23,12 @@ import java.io.Serializable
 val SERVICE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
 
 enum class BluetoothConnectionState {
-    Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics
+    Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics, Success, Disconnected
 }
 
 val bluetoothStateFlow = MutableStateFlow(BluetoothConnectionState.Initialized)
+
+val services = mutableStateListOf<BluetoothGattService>()
 
 class BluetoothManger(private val context: Context): Serializable {
     companion object {
@@ -43,13 +41,16 @@ class BluetoothManger(private val context: Context): Serializable {
     private val gattCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+            bluetoothStateFlow.value = BluetoothConnectionState.Connecting
             Log.d("Walid","onConnectionStateChange newState : $newState")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt?.discoverServices()
+                bluetoothStateFlow.value = BluetoothConnectionState.DiscoveringServices
                 // Device is connected, you can now discover services
                 //TODO trigger event instead of switching activity here which is ew
                 // here trigger event and in MainActivity collect and react
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                bluetoothStateFlow.value = BluetoothConnectionState.Disconnected
             }
         }
         @SuppressLint("MissingPermission")
@@ -62,20 +63,16 @@ class BluetoothManger(private val context: Context): Serializable {
                     Log.d("Walid","onServicesDiscovered : ${gatt?.services}")
                     gatt?.services?.forEach { service ->
                         Log.d("Walid","onServicesDiscovered service : ${service.uuid}")
+                        if (services.contains(service).not()) services.add(service)
                         val characteristics = service.characteristics
-                        for (characteristic in characteristics) {
-                            // You can read, write, or enable notifications on these characteristics
-                            Log.d("Walid","onServicesDiscovered charteristic : ${characteristic.uuid}")
-                            val serviceCharacteristic = gatt.getService(service.uuid)?.getCharacteristic(characteristic.uuid)
-                            //Log.d("Walid","onServicesDiscovered serviceCharacteristic : ${serviceCharacteristic?.uuid}")
-                            val result = gatt.readCharacteristic(characteristic)
-                            if (result.not()) {
-                                val response = context.enableBluetooth()
-                                if (response) gatt.readCharacteristic(characteristic)
-                                else stopScan()
-                            }
-                        }
+                        gatt.readCharacteristic(characteristics[0])
                     }
+                    bluetoothStateFlow.value = BluetoothConnectionState.Success
+//                    if (result.not()) {
+//                        val response = context.enableBluetoothAndAwaitResponse()
+//                        if (response) gatt?.readCharacteristic(characteristic)
+//                        else stopScan()
+//                    }
                 }
             }
         }
@@ -87,7 +84,18 @@ class BluetoothManger(private val context: Context): Serializable {
         ) {
             super.onCharacteristicRead(gatt, characteristic, status)
             val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
-            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString")
+            if (status == BluetoothGatt.GATT_SUCCESS) bluetoothStateFlow.value = BluetoothConnectionState.Success
+            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value}")
+        }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
+            super.onCharacteristicWrite(gatt, characteristic, status)
+            Log.d("Walid","onCharacteristicWrite : ${characteristic?.uuid} status : $statusString")
         }
     }
 
@@ -128,8 +136,10 @@ class BluetoothManger(private val context: Context): Serializable {
             results.removeAll { true }
             //bluetoothLeScanner.startScan(scanCallback)
             bluetoothLeScanner.startScan(listOf(createFilter()), defaultBleScanSettings, scanCallback)
+            bluetoothStateFlow.value = BluetoothConnectionState.Scanning
         } else {
             scanning = false
+            bluetoothStateFlow.value = BluetoothConnectionState.Initialized
             stopScan()
         }
     }

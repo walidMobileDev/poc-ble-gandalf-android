@@ -22,9 +22,20 @@ fun DetailListTitle(text: String, modifier: Modifier) {
 fun CenteredText(text: String, modifier: Modifier) {
     androidx.compose.material.Text(
         text = text,
-        fontSize = 20.sp,
+        fontSize =12.sp,
         color = Color.Cyan,
-        style = MaterialTheme.typography.body2,
+        style = MaterialTheme.typography.body1,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun CenteredSubText(text: String, modifier: Modifier) {
+    androidx.compose.material.Text(
+        text = text,
+        fontSize = 10.sp,
+        color = Color.Cyan,
+        style = MaterialTheme.typography.caption,
         modifier = modifier
     )
 }

@@ -63,6 +63,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             BTPocTheme {
                 val isScanning = bluetoothManager.isScanningFlow().collectAsState(initial = false)
+                val state = bluetoothStateFlow.collectAsState(initial = BluetoothConnectionState.Initialized).value
+                if (state == BluetoothConnectionState.Success) {
+                    switchToDetailActivity()
+                } else {
+                    behaveAccordinglyTo(status = state)
+                }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -79,7 +85,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    suspend fun enableBluetooth(): Boolean {
+    private fun behaveAccordinglyTo(status: BluetoothConnectionState) {
+        Toast.makeText(this,"new status : $status", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun switchToDetailActivity() {
+        val intent = Intent(this, DetailActivity::class.java)
+        startActivity(intent)
+    }
+
+    suspend fun enableBluetoothAndAwaitResponse(): Boolean {
         return if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
             suspendCancellableCoroutine { continuation ->
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
