@@ -10,10 +10,14 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.io.Serializable
@@ -23,12 +27,14 @@ import java.io.Serializable
 val SERVICE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
 
 enum class BluetoothConnectionState {
-    Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics, Success, Disconnected
+    Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics, Success, DataAvailable, Disconnected
 }
 
 val bluetoothStateFlow = MutableStateFlow(BluetoothConnectionState.Initialized)
 
-val services = mutableStateListOf<BluetoothGattService>()
+val servicesFlow = mutableStateListOf<BluetoothGattService>()
+
+val characteristicFlow = mutableStateOf<BluetoothGattCharacteristic?>(null)//MutableStateFlow<BluetoothGattCharacteristic?>(null)
 
 class BluetoothManger(private val context: Context): Serializable {
     companion object {
@@ -60,19 +66,26 @@ class BluetoothManger(private val context: Context): Serializable {
                 context as MainActivity
                 // Services discovered, you can now interact with the device
                 context.lifecycleScope.launch {
-                    Log.d("Walid","onServicesDiscovered : ${gatt?.services}")
                     gatt?.services?.forEach { service ->
-                        Log.d("Walid","onServicesDiscovered service : ${service.uuid}")
-                        if (services.contains(service).not()) services.add(service)
+                        if (servicesFlow.contains(service).not()) servicesFlow.add(service)
                         val characteristics = service.characteristics
-                        gatt.readCharacteristic(characteristics[0])
+                        val result = gatt.readCharacteristic(characteristics[0])
+                        if (result.not()) {
+                            val response = context.enableBluetoothAndAwaitResponse()
+                            if (response) gatt.readCharacteristic(characteristics[0])
+                            else stopScan()
+                        }
+//                        for (characteristic in characteristics) {
+//                            val result = gatt.readCharacteristic(characteristic)
+//                            if (result.not()) {
+//                                val response = context.enableBluetoothAndAwaitResponse()
+//                                if (response) gatt.readCharacteristic(characteristic)
+//                                else stopScan()
+//                            }
+//                        }
                     }
                     bluetoothStateFlow.value = BluetoothConnectionState.Success
-//                    if (result.not()) {
-//                        val response = context.enableBluetoothAndAwaitResponse()
-//                        if (response) gatt?.readCharacteristic(characteristic)
-//                        else stopScan()
-//                    }
+                    stopScan()
                 }
             }
         }
@@ -84,8 +97,12 @@ class BluetoothManger(private val context: Context): Serializable {
         ) {
             super.onCharacteristicRead(gatt, characteristic, status)
             val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
-            if (status == BluetoothGatt.GATT_SUCCESS) bluetoothStateFlow.value = BluetoothConnectionState.Success
-            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value}")
+            if (status == BluetoothGatt.GATT_SUCCESS) CoroutineScope(Dispatchers.Main).launch {
+                characteristicFlow.value = characteristic
+                delay(1000)
+                bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
+            }
+            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value.contentToString()}")
         }
 
         override fun onCharacteristicWrite(
