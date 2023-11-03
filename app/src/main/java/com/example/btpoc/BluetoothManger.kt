@@ -151,8 +151,8 @@ class BluetoothManger(private val context: Context): Serializable {
             }, SCAN_PERIOD)
             scanning = true
             results.removeAll { true }
-            //bluetoothLeScanner.startScan(scanCallback)
-            bluetoothLeScanner.startScan(listOf(createFilter()), defaultBleScanSettings, scanCallback)
+            bluetoothLeScanner.startScan(scanCallback)
+            //bluetoothLeScanner.startScan(listOf(createFilter()), defaultBleScanSettings, scanCallback)
             bluetoothStateFlow.value = BluetoothConnectionState.Scanning
         } else {
             scanning = false
