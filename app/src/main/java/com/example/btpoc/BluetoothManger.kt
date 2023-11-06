@@ -17,14 +17,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.io.Serializable
 
+
 //TODO flow and observing
 
 val SERVICE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
+val GANDALF_UUID = ParcelUuid.fromString("c991e030-812f-4eb5-a314-8b51a7754c39")!!
+val GALAXY_BUDS_UUID = ParcelUuid.fromString("a7a473e9-19c6-491b-aea6-7ea92b8f043a")!!
 
 enum class BluetoothConnectionState {
     Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics, Success, DataAvailable, Disconnected
@@ -52,9 +54,6 @@ class BluetoothManger(private val context: Context): Serializable {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt?.discoverServices()
                 bluetoothStateFlow.value = BluetoothConnectionState.DiscoveringServices
-                // Device is connected, you can now discover services
-                //TODO trigger event instead of switching activity here which is ew
-                // here trigger event and in MainActivity collect and react
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 bluetoothStateFlow.value = BluetoothConnectionState.Disconnected
             }
@@ -67,22 +66,19 @@ class BluetoothManger(private val context: Context): Serializable {
                 // Services discovered, you can now interact with the device
                 context.lifecycleScope.launch {
                     gatt?.services?.forEach { service ->
-                        if (servicesFlow.contains(service).not()) servicesFlow.add(service)
+                        if (servicesFlow.contains(service).not()
+                            && service.uuid.toString().startsWith("0000180").not())
+                            servicesFlow.add(service)
+                        else
+                            return@forEach
+                        Log.d("Walid","onConnectionStateChange service : ${service.uuid}")
                         val characteristics = service.characteristics
-                        val result = gatt.readCharacteristic(characteristics[0])
+                        val result = gatt.readCharacteristic(characteristics[1])
                         if (result.not()) {
                             val response = context.enableBluetoothAndAwaitResponse()
-                            if (response) gatt.readCharacteristic(characteristics[0])
+                            if (response) gatt.readCharacteristic(characteristics[1])
                             else stopScan()
                         }
-//                        for (characteristic in characteristics) {
-//                            val result = gatt.readCharacteristic(characteristic)
-//                            if (result.not()) {
-//                                val response = context.enableBluetoothAndAwaitResponse()
-//                                if (response) gatt.readCharacteristic(characteristic)
-//                                else stopScan()
-//                            }
-//                        }
                     }
                     bluetoothStateFlow.value = BluetoothConnectionState.Success
                     stopScan()
@@ -127,6 +123,7 @@ class BluetoothManger(private val context: Context): Serializable {
             @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 super.onScanResult(callbackType, result)
+                //Log.d("Walid","onScanResult : $result")
                 if (results.contains(result.device).not()) {
                     result.device?.let {
                         results.add(it)
@@ -151,8 +148,9 @@ class BluetoothManger(private val context: Context): Serializable {
             }, SCAN_PERIOD)
             scanning = true
             results.removeAll { true }
-            bluetoothLeScanner.startScan(scanCallback)
-            //bluetoothLeScanner.startScan(listOf(createFilter()), defaultBleScanSettings, scanCallback)
+            val filters = createGandalfFilter()
+            //bluetoothLeScanner.startScan(scanCallback)
+            bluetoothLeScanner.startScan(filters, createGandalfScanSettings(), scanCallback)
             bluetoothStateFlow.value = BluetoothConnectionState.Scanning
         } else {
             scanning = false
@@ -162,9 +160,25 @@ class BluetoothManger(private val context: Context): Serializable {
     }
 
     private fun createFilter(deviceAddress: String? = null): ScanFilter = ScanFilter.Builder()
-        .setServiceUuid(SERVICE_UUID)
+        .setServiceUuid(GANDALF_UUID)
         .setDeviceAddress(deviceAddress)
         .build()
+
+    private fun createGandalfFilter(): List<ScanFilter> {
+        val filters: MutableList<ScanFilter> = ArrayList()
+        val filter = ScanFilter.Builder()
+            .setServiceUuid(GALAXY_BUDS_UUID)
+            .build()
+        filters.add(filter)
+        return filters
+    }
+
+    private fun createGandalfScanSettings(): ScanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+            .setNumOfMatches(ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT)
+            .setReportDelay(0)
+            .build()
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun stopScan() {
@@ -183,8 +197,8 @@ class BluetoothManger(private val context: Context): Serializable {
 
     private val defaultBleScanSettings: ScanSettings = ScanSettings.Builder().also {
         it.setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-        it.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-        it.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+        it.setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+        it.setNumOfMatches(ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT)
         it.setMatchMode(ScanSettings.MATCH_MODE_STICKY)
     }.build()
 }
