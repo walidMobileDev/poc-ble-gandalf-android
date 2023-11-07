@@ -24,7 +24,7 @@ import java.io.Serializable
 
 //TODO flow and observing
 
-val SERVICE_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
+val ACTION_POINT_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
 val GANDALF_UUID = ParcelUuid.fromString("c991e030-812f-4eb5-a314-8b51a7754c39")!!
 val GALAXY_BUDS_UUID = ParcelUuid.fromString("a7a473e9-19c6-491b-aea6-7ea92b8f043a")!!
 
@@ -149,8 +149,8 @@ class BluetoothManger(private val context: Context): Serializable {
             scanning = true
             results.removeAll { true }
             val filters = createGandalfFilter()
-            //bluetoothLeScanner.startScan(scanCallback)
-            bluetoothLeScanner.startScan(filters, createGandalfScanSettings(), scanCallback)
+            bluetoothLeScanner.startScan(scanCallback)
+            //bluetoothLeScanner.startScan(filters, createGandalfScanSettings(), scanCallback)
             bluetoothStateFlow.value = BluetoothConnectionState.Scanning
         } else {
             scanning = false
