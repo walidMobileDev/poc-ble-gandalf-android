@@ -21,21 +21,17 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.io.Serializable
 
-
-//TODO flow and observing
-
 val ACTION_POINT_UUID = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb")!!
 val GANDALF_UUID = ParcelUuid.fromString("c991e030-812f-4eb5-a314-8b51a7754c39")!!
 val GALAXY_BUDS_UUID = ParcelUuid.fromString("a7a473e9-19c6-491b-aea6-7ea92b8f043a")!!
+
 
 enum class BluetoothConnectionState {
     Initialized, Scanning, Connecting, DiscoveringServices, ReadingCharacteristics, Success, DataAvailable, Disconnected
 }
 
 val bluetoothStateFlow = MutableStateFlow(BluetoothConnectionState.Initialized)
-
 val servicesFlow = mutableStateListOf<BluetoothGattService>()
-
 val characteristicFlow = mutableStateOf<BluetoothGattCharacteristic?>(null)//MutableStateFlow<BluetoothGattCharacteristic?>(null)
 
 class BluetoothManger(private val context: Context): Serializable {
@@ -69,14 +65,23 @@ class BluetoothManger(private val context: Context): Serializable {
                         if (servicesFlow.contains(service).not()
                             && service.uuid.toString().startsWith("0000180").not())
                             servicesFlow.add(service)
-                        else
-                            return@forEach
+                        else return@forEach
                         Log.d("Walid","onConnectionStateChange service : ${service.uuid}")
                         val characteristics = service.characteristics
-                        val result = gatt.readCharacteristic(characteristics[1])
+                        Log.d("Walid","onConnectionStateChange characteristics 0 : ${characteristics[0].uuid}")
+                        Log.d("Walid","onConnectionStateChange characteristics 1 : ${characteristics[1].uuid}")
+                        val characteristicToRead = characteristics[0]
+                        if (service.uuid == GANDALF_UUID.uuid) {
+                            gatt.setCharacteristicNotification(characteristicToRead, true)
+                            sendBatteryStateCommand(gatt, characteristics[1])
+                            // Enable notifications for the Tx characteristic
+
+                            return@launch
+                        }
+                        val result = gatt.readCharacteristic(characteristicToRead)
                         if (result.not()) {
                             val response = context.enableBluetoothAndAwaitResponse()
-                            if (response) gatt.readCharacteristic(characteristics[1])
+                            if (response) gatt.readCharacteristic(characteristicToRead)
                             else stopScan()
                         }
                     }
@@ -98,7 +103,7 @@ class BluetoothManger(private val context: Context): Serializable {
                 delay(1000)
                 bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
             }
-            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value.contentToString()}")
+            Log.d("Walid","onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}")
         }
 
         override fun onCharacteristicWrite(
@@ -106,10 +111,31 @@ class BluetoothManger(private val context: Context): Serializable {
             characteristic: BluetoothGattCharacteristic?,
             status: Int
         ) {
-            val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
             super.onCharacteristicWrite(gatt, characteristic, status)
-            Log.d("Walid","onCharacteristicWrite : ${characteristic?.uuid} status : $statusString")
+            val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
+            Log.d("Walid","onCharacteristicWrite : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}")
         }
+
+        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+            super.onCharacteristicChanged(gatt, characteristic)
+            if (characteristic.uuid == TX_CHARACTERISTIC.uuid) {
+                // Process the response data
+                val data = characteristic.value
+                Log.d("BLE", "Received response: ${data.toHex()}")
+            }
+        }
+    }
+
+    private fun sendBatteryStateCommand(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic
+    ) {
+        val command = GandalfCommandCenter.getCommand()
+        characteristic.value = command
+        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        Log.d("Walid", " sendBatteryStateCommand characteristic = ${characteristic.uuid} value = ${characteristic.value.toHex()}")
+        val result = gatt.writeCharacteristic(characteristic)
+        Log.d("Walid","sendBatteryStateCommand write result = $result")
     }
 
     private var scanCallback: ScanCallback? = null
