@@ -21,9 +21,25 @@ class GandalfCommandCenter {
         private val APP_DATA_LENGTH = byteArrayOf(0x00, 0x00)//"0x0602".upperCaseHexStringToByteArray()
         //private val APP_DATA = byteArrayOf(0x11, 0x25)//"0x1125".upperCaseHexStringToByteArray()
 
+        private val APPLICATION_REQUEST_CMD = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a11060000".uppercase().upperCaseHexStringToByteArray()
+        private val GET_FIRMWARE_INFO       = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a07070000".uppercase().upperCaseHexStringToByteArray()
+        private val REBOOT_CMD              = "2400ffffffffffff00001123b10000100001123b10000010100000024c141a0c010000".uppercase().upperCaseHexStringToByteArray()
+
         fun getCommand(): ByteArray {
             val ts = getCurrentTimestampHex().upperCaseHexStringToByteArray()
             return FRAME_LENGTH + SOURCE_ID + SOURCE_PORT + DESTINATION_ID + DESTINATION_PORT + PRODUCT_ID + FRAME_COUNTER + ts + COMMAND_CODE + APP_DATA_LENGTH //+ APP_DATA
+        }
+
+        fun applicationRequestCommand(): ByteArray {
+            return APPLICATION_REQUEST_CMD
+        }
+
+        fun getFirmwareInfoCommand(): ByteArray {
+            return GET_FIRMWARE_INFO
+        }
+
+        fun rebootCommand(): ByteArray {
+            return REBOOT_CMD
         }
 
         fun getFramesLength(): ByteArray {
@@ -34,7 +50,7 @@ class GandalfCommandCenter {
             // Get the current timestamp in seconds since the Unix epoch
             val timestamp = System.currentTimeMillis() / 1000
             // Convert the timestamp to a hexadecimal string
-            return String.format("%x", timestamp).toUpperCase()
+            return String.format("%x", timestamp).uppercase()
         }
     }
 }
