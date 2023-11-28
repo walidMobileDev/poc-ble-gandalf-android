@@ -23,7 +23,7 @@ class GandalfCommandCenter {
 
         private val APPLICATION_REQUEST_CMD = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a11060000".uppercase().upperCaseHexStringToByteArray()
         private val GET_FIRMWARE_INFO       = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a07070000".uppercase().upperCaseHexStringToByteArray()
-        private val REBOOT_CMD              = "2400ffffffffffff00001123b10000100001123b10000010100000024c141a0c010000".uppercase().upperCaseHexStringToByteArray()
+        private val REBOOT_CMD              = "2400ffffffffffff00001123b100000100001123b10000010100000024c8141a0c010000".uppercase().upperCaseHexStringToByteArray()
 
         fun getCommand(): ByteArray {
             val ts = getCurrentTimestampHex().upperCaseHexStringToByteArray()

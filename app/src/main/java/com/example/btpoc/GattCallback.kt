@@ -34,8 +34,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
             context.lifecycleScope.launch {
                 gatt?.services?.forEach { service ->
                     if (servicesFlow.contains(service).not()
-                        && service.uuid.toString().startsWith("0000180").not()
-                    )
+                        && service.uuid.toString().startsWith("0000180").not())
                         servicesFlow.add(service)
                     else return@forEach
                     Log.d("Walid", "onConnectionStateChange service : ${service.uuid}")
@@ -114,7 +113,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         registerForNotifications(gatt, service)
         delay(1000)
         val rxCharacteristic = service.getCharacteristic(RX_CHARACTERISTIC.uuid)
-        val command = GandalfCommandCenter.applicationRequestCommand()
+        val command = GandalfCommandCenter.rebootCommand()
         rxCharacteristic.value = command
         rxCharacteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         Log.d("Walid", " sendBatteryStateCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
