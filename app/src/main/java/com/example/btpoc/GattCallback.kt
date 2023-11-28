@@ -113,7 +113,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         registerForNotifications(gatt, service)
         delay(1000)
         val rxCharacteristic = service.getCharacteristic(RX_CHARACTERISTIC.uuid)
-        val command = GandalfCommandCenter.rebootCommand()
+        val command = GandalfCommandCenter.getFirmwareInfoCommand()
         rxCharacteristic.value = command
         rxCharacteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         Log.d("Walid", " sendBatteryStateCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
