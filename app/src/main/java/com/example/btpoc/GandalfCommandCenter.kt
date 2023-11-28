@@ -11,7 +11,7 @@ val SAMSUNG_NOTIF =  ParcelUuid.fromString("a7a48322-19c6-491b-aea6-7ea92b8f043a
 class GandalfCommandCenter {
     companion object {
         private val FRAME_LENGTH = byteArrayOf(0x00, 0x24)
-        private val SOURCE_ID = byteArrayOf(0x00,0x1A, 0x21, 0xA2.toByte(), 0x78, 0xBE.toByte())
+        private val SOURCE_ID = byteArrayOf(0x00, 0x1A, 0x21, 0xA2.toByte(), 0x78, 0xBE.toByte())
         private val DESTINATION_ID = byteArrayOf(0xD3.toByte(), 0x89.toByte(), 0xF2.toByte(), 0x04.toByte(), 0x19, 0x4C.toByte())//"0x00000001".upperCaseHexStringToByteArray() //1A21A278BE
         private val SOURCE_PORT = byteArrayOf(0x00, 0x00)//"0x00000001".upperCaseHexStringToByteArray() //1A21A278BE
         private val DESTINATION_PORT = byteArrayOf(0x00, 0x00)//"0x00000001".upperCaseHexStringToByteArray() //1A21A278BE

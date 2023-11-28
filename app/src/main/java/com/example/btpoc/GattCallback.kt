@@ -106,20 +106,6 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
 
 
     @SuppressLint("MissingPermission")
-    private fun registerForNotifications(
-        gatt: BluetoothGatt,
-        service: BluetoothGattService
-    ) {
-        val txCharacteristic = service.getCharacteristic(TX_CHARACTERISTIC.uuid)
-        val desc = txCharacteristic.getDescriptor(NOTIF_DESCRIPTOR.uuid)
-        desc.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        val result = gatt.writeDescriptor(desc)
-        Log.d("Walid", "registerForNotifications writeDescriptor result = $result")
-
-        gatt.setCharacteristicNotification(txCharacteristic, true)
-    }
-
-    @SuppressLint("MissingPermission")
     private suspend fun sendGandalfCommand(
         gatt: BluetoothGatt,
         service: BluetoothGattService
@@ -128,10 +114,24 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         registerForNotifications(gatt, service)
         delay(1000)
         val rxCharacteristic = service.getCharacteristic(RX_CHARACTERISTIC.uuid)
-        val command = GandalfCommandCenter.rebootCommand()
+        val command = GandalfCommandCenter.applicationRequestCommand()
         rxCharacteristic.value = command
+        rxCharacteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         Log.d("Walid", " sendBatteryStateCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
         gatt.writeCharacteristic(rxCharacteristic)
     }
 
+    @SuppressLint("MissingPermission")
+    private fun registerForNotifications(
+        gatt: BluetoothGatt,
+        service: BluetoothGattService
+    ) {
+        val txCharacteristic = service.getCharacteristic(TX_CHARACTERISTIC.uuid)
+        val desc = txCharacteristic.getDescriptor(NOTIF_DESCRIPTOR.uuid)
+        desc.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+        val result =  gatt.writeDescriptor(desc)
+        Log.d("Walid","registerForNotifications writeDescriptor result = $result")
+
+        gatt.setCharacteristicNotification(txCharacteristic, true)
+    }
 }
