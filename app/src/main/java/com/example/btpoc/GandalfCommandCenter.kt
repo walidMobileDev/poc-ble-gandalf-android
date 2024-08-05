@@ -1,7 +1,6 @@
 package com.example.btpoc
 
 import android.os.ParcelUuid
-import androidx.compose.ui.text.toUpperCase
 
 val TX_CHARACTERISTIC = ParcelUuid.fromString("c991e031-812f-4eb5-a314-8b51a7754c39")!!
 val RX_CHARACTERISTIC = ParcelUuid.fromString("c991e032-812f-4eb5-a314-8b51a7754c39")!!
@@ -21,9 +20,12 @@ class GandalfCommandCenter {
         private val APP_DATA_LENGTH = byteArrayOf(0x00, 0x00)//"0x0602".upperCaseHexStringToByteArray()
         //private val APP_DATA = byteArrayOf(0x11, 0x25)//"0x1125".upperCaseHexStringToByteArray()
 
-        private val APPLICATION_REQUEST_CMD = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a11060000".uppercase().upperCaseHexStringToByteArray()
-        private val GET_FIRMWARE_INFO       = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a07070000".uppercase().upperCaseHexStringToByteArray()
-        private val REBOOT_CMD              = "2400ffffffffffff00001123b100000100001123b10000010100000024c8141a0c010000".uppercase().upperCaseHexStringToByteArray()
+        private val APPLICATION_REQUEST_CMD            = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a11060000".uppercase().upperCaseHexStringToByteArray()
+        private val GET_FIRMWARE_INFO_CMD              = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a07070000".uppercase().upperCaseHexStringToByteArray()
+        private val REBOOT_CMD                         = "2400ffffffffffff00001123b100000100001123b10000010100000024c8141a0c010000".uppercase().upperCaseHexStringToByteArray()
+        private val GET_BATTERY_LEVEL_CMD              = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a080a0000".uppercase().upperCaseHexStringToByteArray()
+        private val GET_PROXIMITY_VOLTAGE_STATUS_CMD   = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a0d0a0000".uppercase().upperCaseHexStringToByteArray()
+        private val GET_LAMP_STATUS_CMD                = "2400ffffffffffff00001123b100000100001123b10000010100000054c8141a0d0a0000".uppercase().upperCaseHexStringToByteArray()
 
         fun getCommand(): ByteArray {
             val ts = getCurrentTimestampHex().upperCaseHexStringToByteArray()
@@ -35,12 +37,25 @@ class GandalfCommandCenter {
         }
 
         fun getFirmwareInfoCommand(): ByteArray {
-            return GET_FIRMWARE_INFO
+            return GET_FIRMWARE_INFO_CMD
         }
 
         fun rebootCommand(): ByteArray {
             return REBOOT_CMD
         }
+
+        fun getBatteryLevelCommand(): ByteArray {
+            return GET_BATTERY_LEVEL_CMD
+        }
+
+        fun getVoltageLevelCommand(): ByteArray {
+            return GET_PROXIMITY_VOLTAGE_STATUS_CMD
+        }
+
+        fun getLampStatus(): ByteArray {
+            return GET_LAMP_STATUS_CMD
+        }
+
 
         fun getFramesLength(): ByteArray {
             return byteArrayOf(0xFF.toByte())

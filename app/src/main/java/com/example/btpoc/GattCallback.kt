@@ -41,10 +41,11 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
                     if (service.uuid == GANDALF_UUID.uuid) {
                         // Enable notifications for the Tx characteristic
                         sendGandalfCommand(gatt, service)
-                        return@launch
+                        //return@launch
                     }
                 }
                 bluetoothStateFlow.value = BluetoothConnectionState.Success
+                return@launch
             }
         }
     }
@@ -91,6 +92,12 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
             // Process the response data
             val data = characteristic.value
             Log.d("Walid", "onCharacteristicChanged Received response: ${data.toHex()}")
+            CoroutineScope(Dispatchers.Main).launch {
+                characteristicFlow.value = characteristic
+                delay(1000)
+                if (bluetoothStateFlow.value != BluetoothConnectionState.DataAvailable)
+                    bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
+            }
         }
     }
 
@@ -113,10 +120,10 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         registerForNotifications(gatt, service)
         delay(1000)
         val rxCharacteristic = service.getCharacteristic(RX_CHARACTERISTIC.uuid)
-        val command = GandalfCommandCenter.getFirmwareInfoCommand()
+        val command = GandalfCommandCenter.getVoltageLevelCommand()
         rxCharacteristic.value = command
         rxCharacteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-        Log.d("Walid", " sendBatteryStateCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
+        Log.d("Walid", " sendCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
         gatt.writeCharacteristic(rxCharacteristic)
     }
 

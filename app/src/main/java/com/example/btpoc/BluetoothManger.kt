@@ -6,6 +6,7 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.os.Handler
 import android.os.ParcelUuid
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +52,7 @@ class BluetoothManger(private val context: Context): Serializable {
             @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 super.onScanResult(callbackType, result)
-                //Log.d("Walid","onScanResult : $result")
+                Log.d("Walid","onScanResult : $result")
                 if (results.contains(result.device).not()) {
                     result.device?.let {
                         results.add(it)
@@ -63,6 +64,7 @@ class BluetoothManger(private val context: Context): Serializable {
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun connectToDevice(device: BluetoothDevice) {
+        Log.d("Walid","connectToDevice : ${device.name}")
         device.connectGatt(context, false, gattCallback)
     }
 
@@ -76,9 +78,9 @@ class BluetoothManger(private val context: Context): Serializable {
             }, SCAN_PERIOD)
             scanning = true
             results.removeAll { true }
-            val filters = createGandalfFilter()
-            bluetoothLeScanner.startScan(scanCallback)
-            //bluetoothLeScanner.startScan(filters, createGandalfScanSettings(), scanCallback)
+            val filters = listOf(createFilter())
+            //bluetoothLeScanner.startScan(scanCallback)
+            bluetoothLeScanner.startScan(filters, createGandalfScanSettings(), scanCallback)
             bluetoothStateFlow.value = BluetoothConnectionState.Scanning
         } else {
             scanning = false

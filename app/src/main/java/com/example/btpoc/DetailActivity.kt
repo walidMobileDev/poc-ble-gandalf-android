@@ -74,7 +74,7 @@ class DetailActivity: ComponentActivity() {
 
     private fun behaveAccordinglyTo(status: BluetoothConnectionState, characteristic: BluetoothGattCharacteristic?) {
         characteristic?.value?.let { data ->
-            val string = data.contentToString()
+            val string = data.toHex()
             val builder = AlertDialog.Builder(this)
             builder.setTitle("Data Read")
             builder.setMessage("Characteristic: ${characteristic.uuid}\nData Found: $string")
@@ -84,9 +84,10 @@ class DetailActivity: ComponentActivity() {
 
             val dialog = builder.create()
             dialog.show()
+
+            Log.d("Walid", "characterisitic read: ${characteristic?.uuid} => data : ${data.toHex()}")
         }
 
-        Log.d("Walid", "characterisitic read: ${characteristic?.uuid} => data : ${characteristic?.value.contentToString()}")
         Toast.makeText(this,"new status : $status", Toast.LENGTH_SHORT).show()
     }
 }

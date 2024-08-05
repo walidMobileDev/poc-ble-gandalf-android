@@ -9,6 +9,7 @@ import android.content.Intent.FLAG_ACTIVITY_FORWARD_RESULT
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
             BTPocTheme {
                 val isScanning = bluetoothManager.isScanningFlow().collectAsState(initial = false)
                 val state = bluetoothStateFlow.collectAsState(initial = BluetoothConnectionState.Initialized).value
+                Log.d("Walid", "bluetoothStateFlow collectAsState : $state")
                 if (state == BluetoothConnectionState.Success) {
                     switchToDetailActivity()
                 } else {
