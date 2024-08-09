@@ -58,7 +58,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         super.onCharacteristicRead(gatt, characteristic, status)
         val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
         if (status == BluetoothGatt.GATT_SUCCESS) CoroutineScope(Dispatchers.Main).launch {
-            characteristicFlow.value = characteristic
+            characteristicFlow.emit(characteristic)
             delay(1000)
             bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
         }
@@ -87,16 +87,14 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         characteristic: BluetoothGattCharacteristic
     ) {
         super.onCharacteristicChanged(gatt, characteristic)
-        Log.d("Walid", "onCharacteristicChanged : ${characteristic.uuid}")
         if (characteristic.uuid == TX_CHARACTERISTIC.uuid) {
             // Process the response data
             val data = characteristic.value
             Log.d("Walid", "onCharacteristicChanged Received response: ${data.toHex()}")
             CoroutineScope(Dispatchers.Main).launch {
-                characteristicFlow.value = characteristic
-                delay(1000)
-                if (bluetoothStateFlow.value != BluetoothConnectionState.DataAvailable)
-                    bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
+                bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
+                delay(2000)
+                characteristicFlow.emit(characteristic)
             }
         }
     }
@@ -107,7 +105,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         status: Int
     ) {
         super.onDescriptorWrite(gatt, descriptor, status)
-        Log.d("Walid", "onDescriptorWrite : ${descriptor?.uuid}")
+        //Log.d("Walid", "onDescriptorWrite : ${descriptor?.uuid}")
     }
 
 
@@ -123,7 +121,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         val command = GandalfCommandCenter.getVoltageLevelCommand()
         rxCharacteristic.value = command
         rxCharacteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-        Log.d("Walid", " sendCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
+        Log.d("Walid", "sendCommand characteristic = ${rxCharacteristic.uuid} value = ${rxCharacteristic.value.toHex()}")
         gatt.writeCharacteristic(rxCharacteristic)
     }
 
@@ -135,8 +133,7 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
         val txCharacteristic = service.getCharacteristic(TX_CHARACTERISTIC.uuid)
         val desc = txCharacteristic.getDescriptor(NOTIF_DESCRIPTOR.uuid)
         desc.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        val result =  gatt.writeDescriptor(desc)
-        Log.d("Walid","registerForNotifications writeDescriptor result = $result")
+        gatt.writeDescriptor(desc)
 
         gatt.setCharacteristicNotification(txCharacteristic, true)
     }

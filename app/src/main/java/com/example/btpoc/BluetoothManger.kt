@@ -9,9 +9,9 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import java.io.Serializable
@@ -29,7 +29,7 @@ enum class BluetoothConnectionState {
 
 val bluetoothStateFlow = MutableStateFlow(BluetoothConnectionState.Initialized)
 val servicesFlow = mutableStateListOf<BluetoothGattService>()
-val characteristicFlow = mutableStateOf<BluetoothGattCharacteristic?>(null)//MutableStateFlow<BluetoothGattCharacteristic?>(null)
+val characteristicFlow = MutableSharedFlow<BluetoothGattCharacteristic?>()//MutableStateFlow<BluetoothGattCharacteristic?>(null)
 
 class BluetoothManger(private val context: Context): Serializable {
     companion object {
@@ -52,7 +52,7 @@ class BluetoothManger(private val context: Context): Serializable {
             @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 super.onScanResult(callbackType, result)
-                Log.d("Walid","onScanResult : $result")
+                //Log.d("Walid","onScanResult : $result")
                 if (results.contains(result.device).not()) {
                     result.device?.let {
                         results.add(it)
