@@ -81,6 +81,7 @@ fun GandalfCommandCenter.formatCatSafeFrameToMap(data: ByteArray): Map<FrameForm
 
         if (length == -1) {
             // Handle APP_DATA as the remaining data
+            // reversing APP_DATA will be done in the parsing method
             segment = data.copyOfRange(index, data.size)
         } else {
             // Reverse the segment to correct for low-byte-first format

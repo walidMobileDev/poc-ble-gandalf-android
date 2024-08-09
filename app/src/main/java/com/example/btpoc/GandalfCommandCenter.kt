@@ -158,12 +158,13 @@ object GandalfCommandCenter {
 
         return result.toString()
     }
-
-
 }
 
 
 val HEX_CHARS = "0123456789ABCDEF".toCharArray()
+
+
+fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
 
 fun ByteArray.toHex(lowercase: Boolean = false): String {
     val result = StringBuilder(size / 2)
