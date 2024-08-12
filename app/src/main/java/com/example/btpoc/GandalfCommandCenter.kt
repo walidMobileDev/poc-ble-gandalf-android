@@ -91,53 +91,53 @@ object GandalfCommandCenter {
         val result = StringBuilder()
 
         val frameLength = stringData.substring(startIndex = 0, endIndex = 4).formatFrameForLowBytesFirst()
-        Log.d("Walid","formatCatSafeApplicativeData frameLength : $frameLength")
+        // Log.d("Walid","formatCatSafeApplicativeData frameLength : $frameLength")
         result.append("frameLenght : $frameLength\n")
 
         val sourceId = stringData.substring(startIndex = 4, endIndex = 16)
-        Log.d("Walid","formatCatSafeApplicativeData sourceId : $sourceId")
+        // Log.d("Walid","formatCatSafeApplicativeData sourceId : $sourceId")
         result.append("sourceId : ${sourceId.formatFrameForLowBytesFirst()}\n")
 
         val sourcePort = stringData.substring(startIndex = 16, endIndex = 20)
-        Log.d("Walid","formatCatSafeApplicativeData sourcePort : $sourcePort")
+        // Log.d("Walid","formatCatSafeApplicativeData sourcePort : $sourcePort")
         result.append("sourcePort : ${sourcePort.formatFrameForLowBytesFirst()}\n")
 
         val destId = stringData.substring(startIndex = 20, endIndex = 32)
-        Log.d("Walid","formatCatSafeApplicativeData destId : $destId")
+        // Log.d("Walid","formatCatSafeApplicativeData destId : $destId")
         result.append("destId : ${destId.formatFrameForLowBytesFirst()}\n")
 
         val destPort = stringData.substring(startIndex = 32, endIndex = 36)
-        Log.d("Walid","formatCatSafeApplicativeData destPort : $destPort")
+        // Log.d("Walid","formatCatSafeApplicativeData destPort : $destPort")
         result.append("destPort : ${destPort.formatFrameForLowBytesFirst()}\n")
 
         val productId = stringData.substring(startIndex = 36, endIndex = 48)
-        Log.d("Walid","formatCatSafeApplicativeData productId : $productId")
+        // Log.d("Walid","formatCatSafeApplicativeData productId : $productId")
         result.append("productId : ${productId.formatFrameForLowBytesFirst()}\n")
 
         val frameCounter = stringData.substring(startIndex = 48, endIndex = 56)
-        Log.d("Walid","formatCatSafeApplicativeData frameCounter : $frameCounter")
+        // Log.d("Walid","formatCatSafeApplicativeData frameCounter : $frameCounter")
         result.append("frameCounter : ${frameCounter.formatFrameForLowBytesFirst()}\n")
 
         val timestampRaw = stringData.substring(startIndex = 56, endIndex = 64)
-        Log.d("Walid","formatCatSafeApplicativeData timestampRaw : $timestampRaw")
+        // Log.d("Walid","formatCatSafeApplicativeData timestampRaw : $timestampRaw")
 
         val timestamp = getTimestampFromFrame(frame = stringData).formatFrameForLowBytesFirst()
-        Log.d("Walid","formatCatSafeApplicativeData timestamp : $timestamp")
+        // Log.d("Walid","formatCatSafeApplicativeData timestamp : $timestamp")
         result.append("timestamp : ${timestamp.formatFrameForLowBytesFirst()}\n")
 
         val commandCode = stringData.substring(startIndex = 64, endIndex = 68)
-        Log.d("Walid","formatCatSafeApplicativeData commandCode : $commandCode")
+        // Log.d("Walid","formatCatSafeApplicativeData commandCode : $commandCode")
         result.append("commandCode : ${commandCode.formatFrameForLowBytesFirst()}\n")
 
         val applicativeDataLength = stringData.substring(startIndex = 68, endIndex = 72)
-        Log.d("Walid","formatCatSafeApplicativeData applicative data length : $applicativeDataLength")
+        // Log.d("Walid","formatCatSafeApplicativeData applicative data length : $applicativeDataLength")
         result.append("applicativeDataLength : ${applicativeDataLength.formatFrameForLowBytesFirst()}\n")
 
         val applicativeData = stringData.substring(startIndex = 72)
 
-        Log.d("Walid","formatCatSafeApplicativeData applicative data : $applicativeData")
+        // Log.d("Walid","formatCatSafeApplicativeData applicative data : $applicativeData")
         if (isLiveMessage((commandCode))) {
-            Log.d("Walid","formatCatSafeApplicativeData applicative data formated : ${formatCatSafeAppData(applicativeData)}")
+            // Log.d("Walid","formatCatSafeApplicativeData applicative data formated : ${formatCatSafeAppData(applicativeData)}")
             result.append("applicativeData : ${formatCatSafeAppData(applicativeData)}\n")
         } else {
             result.append(applicativeData)

@@ -37,7 +37,7 @@ fun parseCatSafeAppData(data: String): Map<ChannelId, String> {
     val result = mutableMapOf<ChannelId, String>()
     var index = 0
 
-    Log.d("Walid", "parseCatSafeAppData : data = $data length = ${data.length}")
+    //Log.d("Walid", "parseCatSafeAppData : data = $data length = ${data.length}")
 
     while (index < data.length) {
         Log.d("Walid", "parseCatSafeAppData : index = $index")

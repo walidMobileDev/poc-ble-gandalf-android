@@ -83,13 +83,24 @@ class DetailActivity: ComponentActivity() {
 
     private fun behaveAccordinglyTo(status: BluetoothConnectionState, characteristic: BluetoothGattCharacteristic?) {
         characteristic?.value?.let { data ->
+            val formattedData = GandalfCommandCenter.formatCatSafeFrameToMap(data)
+            val formattedAppData = if (formattedData.containsKey(FrameFormat.APP_DATA))
+                GandalfCommandCenter.formatAppDataToMap(formattedData.get(FrameFormat.APP_DATA)!!)
+            else null
+
+            val byteArrayFormattedData = GandalfCommandCenter.formatCatSafeFrameToByteArray(data)
+            val byteArrayFormattedAppData = if (formattedData.containsKey(FrameFormat.APP_DATA))
+                GandalfCommandCenter.formatAppDataToByteArray(formattedData.get(FrameFormat.APP_DATA)!!)
+            else null
+
             val stringData = data.toHex()
             val builder = AlertDialog.Builder(this)
             builder.setTitle("Data Read")
             builder.setMessage(
                 "Characteristic: ${characteristic.uuid}\n\n" +
-                        "Data Found: $stringData\n\n\n")
-                        //"Formated Data: ${GandalfCommandCenter.formatCatSafeFrame(data)}"`)`
+                        //"Data Found: $stringData\n\n\n" +
+                        "Formated Data: ${formattedData.toHexString(shouldPrintLine = true)}" +
+                        "Formated App Data : ${formattedAppData?.toHexString(shouldPrintLine = true)}")
             builder.setPositiveButton("Ok") { dialog, _ ->
                 dialog.dismiss()
             }
@@ -97,14 +108,12 @@ class DetailActivity: ComponentActivity() {
             val dialog = builder.create()
             dialog.show()
 
-            val formattedData = GandalfCommandCenter.formatCatSafeFrameToMap(data)
-            val formattedAppData = if (formattedData.containsKey(FrameFormat.APP_DATA))
-                GandalfCommandCenter.parseAppData(formattedData.get(FrameFormat.APP_DATA)!!)
-            else null
-
             Log.d("Walid", "Detail Activity => characterisitic read: ${characteristic.uuid} => data : ${data.toHex()}")
-            Log.d("Walid", "Detail Activity => formatted data : ${formattedData.toHexString()}")
-            Log.d("Walid", "Detail Activity => formatted appData : ${formattedAppData?.toHexString()}")
+            Log.d("Walid", "Detail Activity => map formatted data : ${formattedData.toHexString()}")
+            Log.d("Walid", "Detail Activity => map formatted appData : ${formattedAppData?.toHexString()}")
+
+            Log.d("Walid", "Detail Activity => byte array formatted data : ${byteArrayFormattedData.toHexString()}")
+            Log.d("Walid", "Detail Activity => byte array formatted appData : ${byteArrayFormattedAppData?.toHexString()}")
         }
 
         Toast.makeText(this,"new status : $status", Toast.LENGTH_SHORT).show()

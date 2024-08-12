@@ -44,6 +44,7 @@ enum class ChannelIdBytes(val id: ByteArray, val length: Int) {
 
 
 fun GandalfCommandCenter.formatCatSafeFrameToByteArray(data: ByteArray): ByteArray {
+    val startTime = System.currentTimeMillis()
     val result = mutableListOf<Byte>()
     var index = 0
 
@@ -55,22 +56,61 @@ fun GandalfCommandCenter.formatCatSafeFrameToByteArray(data: ByteArray): ByteArr
             // Handle the remaining data for APP_DATA
             segment = data.copyOfRange(index, data.size)
         } else {
-            segment = data.copyOfRange(index, index + length)
+            segment = data.copyOfRange(index, index + length).reversedArray()
             index += length
         }
 
         // Reverse the segment to correct for low-byte-first format
-        val formattedSegment = segment.reversedArray()
-        result.addAll(formattedSegment.toList())
+        result.addAll(segment.toList())
 
-        Log.d("Walid", "${format.name}: ${formattedSegment.toHex()}")
+        //Log.d("Walid", "${format.name}: ${segment.toHex()}")
     }
+    val endTime = System.currentTimeMillis()
+    val timeTaken = endTime - startTime
+    Log.d("Walid", "formatCatSafeFrameToByteArray in $timeTaken ms")
+
+    return result.toByteArray()
+}
+
+
+fun GandalfCommandCenter.formatAppDataToByteArray(appData: ByteArray): ByteArray {
+    val startTime = System.currentTimeMillis()
+    val result = mutableListOf<Byte>()
+
+    var index = 0
+    while (index < appData.size) {
+        // Extract the channel ID (2 bytes, low-byte-first format)
+        val channelIdBytes = appData.copyOfRange(index, index + 2).reversedArray()
+        index += 2
+
+        // Find the corresponding ChannelId enum
+        val channelId = ChannelIdBytes.fromByteArrayId(channelIdBytes)
+        if (channelId != null) {
+            // Extract the channel data based on the length defined in the enum
+            val channelData = appData.copyOfRange(index, index + channelId.length).reversedArray()
+            index += channelId.length
+
+            // Add the channel ID and its data to the result
+            result.addAll(channelIdBytes.toList())
+            result.addAll(channelData.toList())
+
+            //Log.d("Walid", "${channelId.name}: ${channelData.toHex()}")
+        } else {
+            Log.w("Walid", "Unknown channel ID: ${channelIdBytes.toHex()}")
+            break // Stop processing if an unknown ID is encountered
+        }
+    }
+
+    val endTime = System.currentTimeMillis()
+    val timeTaken = endTime - startTime
+    Log.d("Walid", "formatAppDataToByteArray in $timeTaken ms")
 
     return result.toByteArray()
 }
 
 
 fun GandalfCommandCenter.formatCatSafeFrameToMap(data: ByteArray): Map<FrameFormat, ByteArray> {
+    val startTime = System.currentTimeMillis()
     Log.d("Walid", "formatCatSafeFrameToMap")
     val result = mutableMapOf<FrameFormat, ByteArray>()
     var index = 0
@@ -90,15 +130,20 @@ fun GandalfCommandCenter.formatCatSafeFrameToMap(data: ByteArray): Map<FrameForm
         }
         result[format] = segment
 
-        Log.d("Walid", "${format.name}: ${segment.toHex()}")
+        //Log.d("Walid", "${format.name}: ${segment.toHex()}")
     }
 
-    Log.d("Walid", "formatCatSafeFrameToMap end")
+    val endTime = System.currentTimeMillis()
+    val timeTaken = endTime - startTime
+    Log.d("Walid", "formatCatSafeFrameToMap in $timeTaken ms")
+
     return result
 }
 
-fun GandalfCommandCenter.parseAppData(appData: ByteArray): Map<ChannelIdBytes, ByteArray> {
+fun GandalfCommandCenter.formatAppDataToMap(appData: ByteArray): Map<ChannelIdBytes, ByteArray> {
+    val startTime = System.currentTimeMillis()
     Log.d("Walid", "parseAppData")
+
     val result = mutableMapOf<ChannelIdBytes, ByteArray>()
     var index = 0
 
@@ -111,27 +156,30 @@ fun GandalfCommandCenter.parseAppData(appData: ByteArray): Map<ChannelIdBytes, B
         val channelId = ChannelIdBytes.fromByteArrayId(channelIdBytes)
         if (channelId != null) {
             // Extract the channel data based on the length defined in the enum
-            val channelData = appData.copyOfRange(index, index + channelId.length)
+            val channelData = appData.copyOfRange(index, index + channelId.length).reversedArray()
             index += channelId.length
             result[channelId] = channelData
 
-            Log.d("Walid", "${channelId.name}: ${channelData.toHex()}")
+            //Log.d("Walid", "${channelId.name}: ${channelData.toHex()}")
         } else {
             Log.w("Walid", "Unknown channel ID: ${channelIdBytes.toHex()}")
             break // Stop processing if an unknown ID is encountered
         }
     }
 
-    Log.d("Walid", "parseAppData end")
+    val endTime = System.currentTimeMillis()
+    val timeTaken = endTime - startTime
+    Log.d("Walid", "parseAppData end in : $timeTaken ms")
 
     return result
 }
 
 
-fun <K> Map<K, ByteArray>.toHexString(): String {
+fun <K> Map<K, ByteArray>.toHexString(shouldPrintLine: Boolean = false): String {
     val result = StringBuilder()
     for ((key, value) in this) {
         result.append("$key => ${value.toHex()}   ")
+        if (shouldPrintLine) result.append("\n")
     }
     return result.toString()
 }
