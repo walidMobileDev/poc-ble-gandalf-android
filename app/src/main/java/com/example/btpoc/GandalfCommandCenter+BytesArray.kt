@@ -2,7 +2,6 @@ package com.example.btpoc
 
 import android.util.Log
 
-
 enum class FrameFormat(val length: Int) {
     LENGTH( 2),
     SOURCE_ID(6),

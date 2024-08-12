@@ -93,7 +93,6 @@ class DetailActivity: ComponentActivity() {
                 GandalfCommandCenter.formatAppDataToByteArray(formattedData.get(FrameFormat.APP_DATA)!!)
             else null
 
-            val stringData = data.toHex()
             val builder = AlertDialog.Builder(this)
             builder.setTitle("Data Read")
             builder.setMessage(
