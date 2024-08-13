@@ -12,5 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "BT Poc"
+rootProject.name = "catsafe-library-android"
 include ':app'
+include ':catsafe-bt-lib'

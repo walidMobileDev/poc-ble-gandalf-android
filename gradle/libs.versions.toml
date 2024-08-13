@@ -1,0 +1,7 @@
+[versions]
+compose = "1.2.0"
+
+[libraries]
+
+
+[plugins]
