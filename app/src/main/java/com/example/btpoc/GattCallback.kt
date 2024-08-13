@@ -41,6 +41,8 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
                     if (service.uuid == GANDALF_UUID.uuid) {
                         // Enable notifications for the Tx characteristic
                         sendGandalfCommand(gatt, service)
+                        //TODO await association alert response
+                        delay(3000)
                         //return@launch
                     }
                 }
