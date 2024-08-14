@@ -1,4 +1,4 @@
-package com.example.btpoc
+package com.example.btpoc.ble
 
 import android.Manifest
 import android.bluetooth.*
@@ -32,6 +32,37 @@ val servicesFlow = mutableStateListOf<BluetoothGattService>()
 val characteristicFlow = MutableSharedFlow<BluetoothGattCharacteristic?>()//MutableStateFlow<BluetoothGattCharacteristic?>(null)
 
 class BluetoothManger(private val context: Context): Serializable {
+    private fun createGandalfFilter(): List<ScanFilter> {
+        val filters: MutableList<ScanFilter> = ArrayList()
+        val filter = ScanFilter.Builder()
+            .setServiceUuid(GANDALF_UUID)
+            .build()
+        filters.add(filter)
+        return filters
+    }
+
+    private fun createGandalfScanSettings(): ScanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+            .setNumOfMatches(ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT)
+            .setReportDelay(0)
+            .build()
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    fun stopScan() {
+        bluetoothLeScanner.stopScan(scanCallback)
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    fun isScanningFlow(): Flow<Boolean> {
+        return flow {
+            while (true) {
+                emit(scanning)
+                delay(200)
+            }
+        }
+    }
+
     companion object {
         const val SCAN_PERIOD: Long = 10000
     }
@@ -45,7 +76,7 @@ class BluetoothManger(private val context: Context): Serializable {
     val results = mutableStateListOf<BluetoothDevice>()
     private var scanning = false
     private val handler = Handler()
-    // Stops scanning after 10 seconds.
+// Stops scanning after 10 seconds.
 
     init {
         scanCallback = object : ScanCallback() {
@@ -93,37 +124,6 @@ class BluetoothManger(private val context: Context): Serializable {
         .setServiceUuid(GANDALF_UUID)
         .setDeviceAddress(deviceAddress)
         .build()
-
-    private fun createGandalfFilter(): List<ScanFilter> {
-        val filters: MutableList<ScanFilter> = ArrayList()
-        val filter = ScanFilter.Builder()
-            .setServiceUuid(GANDALF_UUID)
-            .build()
-        filters.add(filter)
-        return filters
-    }
-
-    private fun createGandalfScanSettings(): ScanSettings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-            .setNumOfMatches(ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT)
-            .setReportDelay(0)
-            .build()
-
-    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
-    fun stopScan() {
-        bluetoothLeScanner.stopScan(scanCallback)
-    }
-
-    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
-    fun isScanningFlow(): Flow<Boolean> {
-        return flow {
-            while (true) {
-                emit(scanning)
-                delay(200)
-            }
-        }
-    }
 
     private val defaultBleScanSettings: ScanSettings = ScanSettings.Builder().also {
         it.setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)

@@ -12,6 +12,7 @@ import com.beepiz.catsafebtlib.bleconnection.CatSafeBTAdapter
 import com.beepiz.catsafebtlib.bleconnection.CatSafeBTAdapter.Companion.RX_CHARACTERISTIC
 import com.beepiz.catsafebtlib.bleconnection.CatSafeBTAdapter.Companion.TX_CHARACTERISTIC
 import com.beepiz.catsafebtlib.bleconnection.CatSafeException
+import com.beepiz.catsafebtlib.utils.CSLogger
 import com.beepiz.catsafebtlib.utils.GandalfCommandCenter
 import com.beepiz.catsafebtlib.utils.toHex
 import kotlinx.coroutines.delay
@@ -23,8 +24,10 @@ object CatSafeCommander {
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     suspend fun sendGandalfCommand(command: ByteArray = GandalfCommandCenter.getVoltageLevelCommand()) {
-        val gatt = catSafeConnectedDeviceFlow.last()?.gatt
-        val service = catSafeConnectedDeviceFlow.last()?.service
+        CSLogger.debug(message = "sendGandalfCommand : ${command.toHex()}")
+        val gatt = catSafeConnectedDevice?.gatt
+        val service = catSafeConnectedDevice?.service
+        CSLogger.debug(message = "gatt : $gatt & service : ${service?.uuid}")
         //stopScan()
         if (gatt == null || service == null)
             throw CatSafeException(CatSafeBLEError.DEVICE_DISCONNECTED)
@@ -33,9 +36,8 @@ object CatSafeCommander {
         val rxCharacteristic = service.getCharacteristic(RX_CHARACTERISTIC.uuid)
         rxCharacteristic?.value = command
         rxCharacteristic?.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-        Log.d(
-            "CatSafeLib",
-            "sendCommand characteristic = ${rxCharacteristic?.uuid} value = ${rxCharacteristic?.value?.toHex()}"
+       CSLogger.debug(
+           message = "sendCommand characteristic = ${rxCharacteristic?.uuid} value = ${rxCharacteristic?.value?.toHex()}"
         )
         gatt.writeCharacteristic(rxCharacteristic)
 

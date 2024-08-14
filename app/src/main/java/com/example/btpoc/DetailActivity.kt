@@ -20,6 +20,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import com.example.btpoc.ble.BluetoothConnectionState
+import com.example.btpoc.ble.FrameFormat
+import com.example.btpoc.ble.GandalfCommandCenter
+import com.example.btpoc.ble.bluetoothStateFlow
+import com.example.btpoc.ble.characteristicFlow
+import com.example.btpoc.ble.formatAppDataToByteArray
+import com.example.btpoc.ble.formatAppDataToMap
+import com.example.btpoc.ble.formatCatSafeFrameToByteArray
+import com.example.btpoc.ble.formatCatSafeFrameToMap
+import com.example.btpoc.ble.servicesFlow
+import com.example.btpoc.ble.toHex
+import com.example.btpoc.ble.toHexString
 import com.example.btpoc.ui.theme.BTPocTheme
 import kotlinx.coroutines.launch
 

@@ -11,7 +11,9 @@ import com.beepiz.catsafebtlib.bleconnection.CatSafeBTAdapter.Companion.GANDALF_
 import com.beepiz.catsafebtlib.bleconnection.CatSafeBTAdapter.Companion.TX_CHARACTERISTIC
 import com.beepiz.catsafebtlib.communication.CatSafeBLEDevice
 import com.beepiz.catsafebtlib.communication.CatSafeCommander
+import com.beepiz.catsafebtlib.communication.catSafeConnectedDevice
 import com.beepiz.catsafebtlib.communication.catSafeConnectedDeviceFlow
+import com.beepiz.catsafebtlib.utils.CSLogger
 import com.beepiz.catsafebtlib.utils.toHex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,13 +28,13 @@ class CatSafeGattCallback : BluetoothGattCallback() {
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-        Log.d("CatSafeLib", "onConnectionStateChange newState : $newState")
+        CSLogger.debug(message ="onConnectionStateChange newState : $newState")
         _connectionStateFlow.tryEmit(ConnectionState.stateFromIntValue(newState))
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             gatt?.discoverServices()
         } else {
             CoroutineScope(Dispatchers.Default).launch {
-                catSafeConnectedDeviceFlow.emit(null)
+                //catSafeConnectedDeviceFlow.emit(null)
             }
         }
     }
@@ -42,11 +44,9 @@ class CatSafeGattCallback : BluetoothGattCallback() {
     override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
         if (status == BluetoothGatt.GATT_SUCCESS) {
             gatt?.getService(GANDALF_UUID.uuid)?.let { service ->
-                Log.d("CatSafeLib", "onServicesDiscovered : ${service.uuid}")
+                CSLogger.debug(message ="onServicesDiscovered : ${service.uuid}")
                 _connectionStateFlow.tryEmit(ConnectionState.STATE_SERVICE_DISCOVERED)
-                CoroutineScope(Dispatchers.Default).launch {
-                    catSafeConnectedDeviceFlow.emit(CatSafeBLEDevice(gatt.device.name, gatt.device, gatt, service))
-                }
+                catSafeConnectedDevice = CatSafeBLEDevice(gatt.device.name, gatt.device, gatt, service)
             }
         }
     }
@@ -63,8 +63,7 @@ class CatSafeGattCallback : BluetoothGattCallback() {
             CoroutineScope(Dispatchers.Default).launch {
             delay(1000)
         }
-        Log.d(
-            "CatSafeLib",
+       CSLogger.debug(message =
             "onCharacteristicRead : ${characteristic.uuid} status : $statusString  value : ${value.toHex()}"
         )
     }
@@ -87,8 +86,7 @@ class CatSafeGattCallback : BluetoothGattCallback() {
     ) {
         super.onCharacteristicWrite(gatt, characteristic, status)
         val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
-        Log.d(
-            "Walid",
+        CSLogger.debug(message =
             "onCharacteristicWrite : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}"
         )
     }
@@ -102,7 +100,7 @@ class CatSafeGattCallback : BluetoothGattCallback() {
         super.onCharacteristicChanged(gatt, characteristic, value)
         if (characteristic.uuid == TX_CHARACTERISTIC.uuid) {
             // Process the response data
-            Log.d("Walid", "onCharacteristicChanged Received response: ${value.toHex()}")
+            CSLogger.debug(message = "onCharacteristicChanged Received response: ${value.toHex()}")
             CoroutineScope(Dispatchers.Default).launch {
                 /*bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
                 delay(2000)
@@ -119,5 +117,18 @@ class CatSafeGattCallback : BluetoothGattCallback() {
     override fun onCharacteristicChanged(
         gatt: BluetoothGatt,
         characteristic: BluetoothGattCharacteristic
-    ) = onCharacteristicChanged(gatt, characteristic, characteristic.value)
+    ) {
+        super.onCharacteristicChanged(gatt, characteristic)
+        if (characteristic.uuid == TX_CHARACTERISTIC.uuid) {
+            val value = characteristic.value
+            // Process the response data
+            CSLogger.debug(message = "onCharacteristicChanged Received response: ${value.toHex()}")
+            CoroutineScope(Dispatchers.Default).launch {
+                /*bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
+                delay(2000)
+                characteristicFlow.emit(characteristic)*/
+                CatSafeCommander.catsafeResponseFlow.emit(value)
+            }
+        }
+    }
 }

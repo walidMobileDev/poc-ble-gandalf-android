@@ -2,7 +2,9 @@ package com.example.btpoc
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_FORWARD_RESULT
@@ -20,9 +22,25 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestMultiple
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.example.btpoc.ble.BluetoothConnectionState
+import com.example.btpoc.ble.BluetoothManger
+import com.example.btpoc.ble.CSBluetoothManager
+import com.example.btpoc.ble.FrameFormat
+import com.example.btpoc.ble.GandalfCommandCenter
+import com.example.btpoc.ble.bluetoothStateFlow
+import com.example.btpoc.ble.catSafeResponseDataFlow
+import com.example.btpoc.ble.characteristicFlow
+import com.example.btpoc.ble.formatAppDataToByteArray
+import com.example.btpoc.ble.formatAppDataToMap
+import com.example.btpoc.ble.formatCatSafeFrameToByteArray
+import com.example.btpoc.ble.formatCatSafeFrameToMap
+import com.example.btpoc.ble.toHex
+import com.example.btpoc.ble.toHexString
 import com.example.btpoc.ui.theme.BTPocTheme
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -35,6 +53,7 @@ import kotlin.coroutines.resume
 @SuppressLint("MissingPermission")
 class MainActivity : ComponentActivity() {
     private lateinit var bluetoothManager: BluetoothManger
+    private lateinit var csBluetoothManager: CSBluetoothManager
     private lateinit var continuation: CancellableContinuation<Boolean>
 
     private val registration: ActivityResultLauncher<IntentSenderRequest> = registerForActivityResult(
@@ -60,25 +79,31 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //doesn't work with application context
+        csBluetoothManager = CSBluetoothManager(context = this)
         bluetoothManager = BluetoothManger(context = this)
         setContent {
             BTPocTheme {
-                val isScanning = bluetoothManager.isScanningFlow().collectAsState(initial = false)
+                val isScanning = csBluetoothManager.isScanningFlow().collectAsState(initial = false)
                 val state = bluetoothStateFlow.collectAsState(initial = BluetoothConnectionState.Initialized).value
-                Log.d("Walid", "bluetoothStateFlow collectAsState : $state")
-                if (state == BluetoothConnectionState.Success) {
-                    switchToDetailActivity()
-                } else {
-                    behaveAccordinglyTo(status = state)
+
+                LaunchedEffect(Unit) {
+                    lifecycleScope.launch {
+                        catSafeResponseDataFlow.collect { data ->
+                            behaveAccordinglyTo(state, data)
+                        }
+                    }
                 }
+                Log.d("Walid", "bluetoothStateFlow collectAsState : $state")
+                behaveAccordinglyTo(status = state)
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     InitUi(
                         isScanning = isScanning.value,
-                        bluetoothScanner = bluetoothManager,
-                        results = bluetoothManager.results
+                        csBluetoothScanner = csBluetoothManager,
+                        results = csBluetoothManager.results
                     ) {
                        lifecycleScope.launch { startScan() }
                     }
@@ -91,9 +116,40 @@ class MainActivity : ComponentActivity() {
         Toast.makeText(this,"new status : $status", Toast.LENGTH_SHORT).show()
     }
 
-    private fun switchToDetailActivity() {
-        val intent = Intent(this, DetailActivity::class.java)
-        startActivity(intent)
+    private fun behaveAccordinglyTo(status: BluetoothConnectionState, data: ByteArray?) {
+        data?.let { safeData ->
+            val formattedData = GandalfCommandCenter.formatCatSafeFrameToMap(safeData)
+            val formattedAppData = if (formattedData.containsKey(FrameFormat.APP_DATA))
+                GandalfCommandCenter.formatAppDataToMap(formattedData[FrameFormat.APP_DATA]!!)
+            else null
+
+            val byteArrayFormattedData = GandalfCommandCenter.formatCatSafeFrameToByteArray(safeData)
+            val byteArrayFormattedAppData = if (formattedData.containsKey(FrameFormat.APP_DATA))
+                GandalfCommandCenter.formatAppDataToByteArray(formattedData[FrameFormat.APP_DATA]!!)
+            else null
+
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Data Read")
+            builder.setMessage(
+                        //"Data Found: $stringData\n\n\n" +
+                        "Formated Data: ${formattedData.toHexString(shouldPrintLine = true)}" +
+                        "Formated App Data : ${formattedAppData?.toHexString(shouldPrintLine = true)}")
+            builder.setPositiveButton("Ok") { dialog, _ ->
+                dialog.dismiss()
+            }
+
+            val dialog = builder.create()
+            dialog.show()
+
+            Log.d("Walid", "Detail Activity => response data : ${data.toHex()}")
+            Log.d("Walid", "Detail Activity => map formatted data : ${formattedData.toHexString()}")
+            Log.d("Walid", "Detail Activity => map formatted appData : ${formattedAppData?.toHexString()}")
+
+            Log.d("Walid", "Detail Activity => byte array formatted data : ${byteArrayFormattedData.toHexString()}")
+            Log.d("Walid", "Detail Activity => byte array formatted appData : ${byteArrayFormattedAppData?.toHexString()}")
+        }
+
+        Toast.makeText(this,"new status : $status", Toast.LENGTH_SHORT).show()
     }
 
     suspend fun enableBluetoothAndAwaitResponse(): Boolean {
@@ -115,7 +171,7 @@ class MainActivity : ComponentActivity() {
             && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
             && checkSelfPermission(Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED
         ) {
-            if (requestLocationAndAwaitResult()) bluetoothManager.startScan()
+            if (requestLocationAndAwaitResult()) csBluetoothManager.startScan()
             else Toast.makeText(this, "Please Enable Location", Toast.LENGTH_LONG).show()
         } else {
             btResultLauncher.launch(

@@ -23,13 +23,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.btpoc.ble.CSBluetoothManager
 import com.example.btpoc.ui.theme.BTPocTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 fun InitUi(
     isScanning: Boolean,
-    bluetoothScanner: BluetoothManger,
+    csBluetoothScanner: CSBluetoothManager,
     results: SnapshotStateList<BluetoothDevice>,
     action: () -> Unit
 ) {
@@ -72,7 +76,7 @@ fun InitUi(
         //bluetoothScanner.result is a snapshotStateListe aka observable list yeaaay
         UpdateScanResult(
             results,
-            bluetoothScanner = bluetoothScanner,
+            csBluetoothScanner = csBluetoothScanner,
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .align(Alignment.CenterHorizontally)
@@ -98,13 +102,15 @@ fun BluetoothScanButton(isScanning: Boolean, modifier: Modifier, action: (isScan
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 fun UpdateScanResult(
     results: SnapshotStateList<BluetoothDevice>,
-    bluetoothScanner: BluetoothManger,
+    csBluetoothScanner: CSBluetoothManager,
     modifier: Modifier
 ) {
     // Display the results of the Bluetooth LE scan.
     Column(modifier = modifier) {
         results.forEach {
-            CellView(it, bluetoothScanner = bluetoothScanner)
+            CellView(it,
+                csBluetoothScanner = csBluetoothScanner
+            )
             Spacer(modifier = Modifier.height(10.dp))
         }
     }
@@ -118,12 +124,18 @@ fun CenteredListTitle(isScanResultEmpty: Boolean, modifier: Modifier) {
 
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
-fun CellView(result: BluetoothDevice, bluetoothScanner: BluetoothManger) {
+fun CellView(
+    result: BluetoothDevice,
+    csBluetoothScanner: CSBluetoothManager
+) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         elevation = 10.dp,
         modifier = Modifier.clickable(onClick = {
-            bluetoothScanner.connectToDevice(result)
+            //bluetoothScanner.connectToDevice(result)
+            CoroutineScope(Dispatchers.Default).launch {
+                csBluetoothScanner.connectToDevice(result)
+            }
         }),
         color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.onSecondary else MaterialTheme.colors.background
     ) {

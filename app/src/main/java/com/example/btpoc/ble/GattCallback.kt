@@ -1,4 +1,4 @@
-package com.example.btpoc
+package com.example.btpoc.ble
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -7,6 +7,8 @@ import android.content.Context
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.lifecycleScope
+import com.beepiz.catsafebtlib.utils.CSLogger
+import com.example.btpoc.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -64,9 +66,8 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
             delay(1000)
             bluetoothStateFlow.emit(BluetoothConnectionState.DataAvailable)
         }
-        Log.d(
-            "Walid",
-            "onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}"
+       CSLogger.debug(
+           message = "onCharacteristicRead : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}"
         )
     }
 
@@ -78,9 +79,8 @@ class GattCallback(private val context: Context) : BluetoothGattCallback() {
     ) {
         super.onCharacteristicWrite(gatt, characteristic, status)
         val statusString = if (status == BluetoothGatt.GATT_SUCCESS) "Success" else "oh no $status"
-        Log.d(
-            "Walid",
-            "onCharacteristicWrite : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}"
+       CSLogger.debug(
+           message = "onCharacteristicWrite : ${characteristic?.uuid} status : $statusString  value : ${characteristic?.value?.toHex()}"
         )
     }
 

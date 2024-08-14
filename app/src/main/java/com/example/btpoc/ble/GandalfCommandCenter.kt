@@ -1,7 +1,6 @@
-package com.example.btpoc
+package com.example.btpoc.ble
 
 import android.os.ParcelUuid
-import android.util.Log
 
 val TX_CHARACTERISTIC = ParcelUuid.fromString("c991e031-812f-4eb5-a314-8b51a7754c39")!!
 val RX_CHARACTERISTIC = ParcelUuid.fromString("c991e032-812f-4eb5-a314-8b51a7754c39")!!

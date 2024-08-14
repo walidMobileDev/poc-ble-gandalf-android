@@ -1,4 +1,4 @@
-package com.example.btpoc
+package com.example.btpoc.ble
 
 import android.util.Log
 

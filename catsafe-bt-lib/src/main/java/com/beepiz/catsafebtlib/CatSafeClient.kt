@@ -7,19 +7,23 @@ import androidx.annotation.RequiresPermission
 import com.beepiz.catsafebtlib.bleconnection.CatSafeBTAdapter
 import com.beepiz.catsafebtlib.bleconnection.ConnectionState
 import com.beepiz.catsafebtlib.communication.CatSafeCommander
+import com.beepiz.catsafebtlib.utils.CSLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 
 class CatSafeClient(context: Context) {
-    private val adapter = CatSafeBTAdapter(context)
+    val adapter = CatSafeBTAdapter(context)
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun scan(deviceName: String? = null): Flow<BluetoothDevice> {
         return adapter.startScan()
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    fun stopScan() {
+        return adapter.stopScan()
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -28,9 +32,11 @@ class CatSafeClient(context: Context) {
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    fun sendCommand(): Flow<ByteArray> {
-        CoroutineScope(Dispatchers.IO).launch {
-            CatSafeCommander.sendGandalfCommand()
+    fun sendCommand(data: ByteArray): Flow<ByteArray> {
+        CSLogger.debug(message = "sendCommand")
+        CoroutineScope(Dispatchers.Default).launch {
+            CSLogger.debug(message = "sendCommand on Default Dispatcher")
+            CatSafeCommander.sendGandalfCommand(data)
         }
 
         return CatSafeCommander.catsafeResponseFlow

@@ -13,6 +13,7 @@ import android.os.Looper
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresPermission
+import com.beepiz.catsafebtlib.utils.CSLogger
 import kotlinx.coroutines.flow.SharedFlow
 
 class CatSafeBTAdapter(private val context: Context) {
@@ -28,7 +29,7 @@ class CatSafeBTAdapter(private val context: Context) {
 
     private val scanCallback = CatSafeBLEScanCallback()
 
-    private var scanning = false
+    var scanning = false
 
     init {
         val service = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -40,7 +41,6 @@ class CatSafeBTAdapter(private val context: Context) {
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun startScan(forPeriodInSeconds: Long = 10000L): SharedFlow<BluetoothDevice> {
-        Log.d("CatSafeLib","startScan ")
         if (scanning.not()) { // Stops scanning after a pre-defined scan period.
             Handler(Looper.myLooper() ?: Looper.getMainLooper()).postDelayed({
                 scanning = false
@@ -64,7 +64,7 @@ class CatSafeBTAdapter(private val context: Context) {
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun connectToDevice(device: BluetoothDevice): SharedFlow<ConnectionState> {
-        Log.d("CatSafeLib","connectToDevice : ${device.name}")
+        CSLogger.debug(message = "connectToDevice : ${device.name}")
         val callback = CatSafeGattCallback()
         device.connectGatt(context, false, callback)
 

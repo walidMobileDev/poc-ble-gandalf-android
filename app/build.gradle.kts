@@ -48,6 +48,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":catsafe-bt-lib"))
     implementation ("androidx.core:core-ktx:1.7.0")
     implementation ("androidx.compose.ui:ui:1.2.0")
     implementation ("androidx.compose.material3:material3:1.0.0-alpha01")
